@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Profile;
 use App\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -48,9 +49,10 @@ class RegisterController extends Controller
     protected function validator(array $data)
     {
         return Validator::make($data, [
-            'name' => 'required|max:255',
+            'name' => 'required|max:255|unique:users',
             'email' => 'required|email|max:255|unique:users',
             'password' => 'required|min:6|confirmed',
+	        'gender' => 'required|bool'
         ]);
     }
 
@@ -62,10 +64,22 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
-        return User::create([
+	    if ($data['gender']) {
+		    $avatar = 'public/defaults/avatars/male.png';
+	    } else {
+		    $avatar = 'public/defaults/avatars/female.png';
+	    }
+
+        $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
+	        'gender' => $data['gender'],
             'password' => bcrypt($data['password']),
+	        'slug' => str_slug($data['name']),
+	        'avatar' => $avatar
         ]);
+
+	    Profile::create(['user_id' => $user->id]);
+	    return $user;
     }
 }
